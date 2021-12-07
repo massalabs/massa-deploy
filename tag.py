@@ -15,11 +15,11 @@ def run_cmd(cmd, ignore_err=False):
 
 def tag(tag, genesis_timestamp, end_timestamp):
     # git clone
-    print("cloning dev branch...")
+    print("cloning main branch...")
     run_cmd("rm -rf massa", True)
-    run_cmd("git clone https://gitlab.com/massalabs/massa")
+    run_cmd("git clone https://github.com/massalabs/massa")
     os.chdir("massa")
-    run_cmd("git checkout dev")
+    run_cmd("git checkout main")
     
     # update config
     print("updating config...")
@@ -32,7 +32,7 @@ def tag(tag, genesis_timestamp, end_timestamp):
         toml.dump(config_data, toml_file)
     
     # commit/push
-    print("commit/push in dev...")
+    print("commit/push in main...")
     run_cmd('git commit -am "temporary versioning"')
     run_cmd("git push")
     commit_id = run_cmd("git rev-parse HEAD").strip()
@@ -40,14 +40,14 @@ def tag(tag, genesis_timestamp, end_timestamp):
     # merge to testnet branch and tag
     print("merge into testnet...")
     run_cmd("git checkout testnet")
-    run_cmd("git merge dev")
+    run_cmd("git merge main")
     run_cmd("git push")
     run_cmd('git tag "'+tag+'" -am "Version '+tag+'"')
     run_cmd("git push --tags")
     
-    # revert in dev
-    print("revert in dev...")
-    run_cmd("git checkout dev");
+    # revert in main
+    print("revert in main...")
+    run_cmd("git checkout main");
     run_cmd("git revert --no-commit " + commit_id)
     run_cmd('git commit -am "undo temporary versioning"')
     run_cmd("git push")

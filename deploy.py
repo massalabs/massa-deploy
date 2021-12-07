@@ -2,9 +2,7 @@ import subprocess
 import toml
 import copy
 import json
-import time
 import sys
-
 
 def run_cmd(cmd, ignore_err=False):
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
@@ -16,7 +14,7 @@ def deploy(tag, servers):
     # git clone
     print("cloning git...")
     run_cmd("rm -rf massa")
-    run_cmd("git clone --depth 1 --branch " + tag + " https://gitlab.com/massalabs/massa")
+    run_cmd("git clone --depth 1 --branch " + tag + " https://github.com/massalabs/massa")
     
     # load config files
     print("loading config file...")
@@ -30,32 +28,42 @@ def deploy(tag, servers):
         peers = json.load(json_file)
 
     # distribute to servers
-    tstnet_user ="CENSORED"
-    testnet_pwd = "CENSORED"
+    testnet_pwd = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     srvs = {
+        "testnet0": {
+            "ip": "141.94.218.103",
+            "node_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "node_pubkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "staking_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "bootstrap_server": False
+        },
         "testnet1": {
-            "ip": "CENSORED",
-            "node_privkey": "CENSORED",
-            "node_pubkey": "CENSORED",
-            "staking_privkey": "CENSORED"
+            "ip": "149.202.86.103",
+            "node_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "node_pubkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "staking_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "bootstrap_server": True
         },
         "testnet2": {
-            "ip": "CENSORED",
-            "node_privkey": "CENSORED",
-            "node_pubkey": "CENSORED",
-            "staking_privkey": "CENSORED"
+            "ip": "149.202.89.125",
+            "node_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "node_pubkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "staking_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "bootstrap_server": True
         },
         "testnet3": {
-            "ip": "CENSORED",
-            "node_privkey": "CENSORED",
-            "node_pubkey": "CENSORED",
-            "staking_privkey": "CENSORED"
+            "ip": "158.69.120.215",
+            "node_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "node_pubkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "staking_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "bootstrap_server": True
         },
         "testnet4": {
-            "ip": "CENSORED",
-            "node_privkey": "CENSORED",
-            "node_pubkey": "CENSORED",
-            "staking_privkey": "CENSORED"
+            "ip": "158.69.23.120",
+            "node_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "node_pubkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "staking_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "bootstrap_server": True
         }
     }
 
@@ -91,10 +99,18 @@ def deploy(tag, servers):
         cfg = copy.deepcopy(config_data)
         cfg["version"] = tag
         cfg["network"]["target_bootstrap_connections"] = len(srvs) - 1  # connect to all bootstrap srvs
-        cfg["network"]["target_out_nonbootstrap_connections"] = 0  # do not connect to anyone
-        cfg["network"]["max_in_nonbootstrap_connections"] = 10  # allow 10 people in
+        cfg["network"]["target_out_nonbootstrap_connections"] = 3  # connect to 3 peers
+        cfg["network"]["max_in_nonbootstrap_connections"] = 10  # allow 10 people in        
         cfg["network"]["routable_ip"] = srv["ip"]
         cfg["logging"]["level"] = 2
+        
+        cfg["bootstrap"]["bootstrap_list"] = [
+            [srv_v["ip"] + ":31245", srv_v["node_pubkey"]]
+            for (srv_n, srv_v) in srvs.items() if srv_v["bootstrap_server"] is True and srv_n != srv_name
+        ]
+        if srv["bootstrap_server"] is False:
+            del cfg["bootstrap"]["bind"]
+        
         with open(config_path, "w") as toml_file:
             toml.dump(cfg, toml_file)
         
@@ -112,6 +128,4 @@ def deploy(tag, servers):
 
 if __name__ == "__main__":
     deploy(sys.argv[1], sys.argv[2:])
-
-
 
