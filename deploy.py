@@ -15,7 +15,7 @@ def deploy(tag, servers):
     print("cloning git...")
     run_cmd("rm -rf massa")
     run_cmd("git clone --depth 1 --branch " + tag + " https://github.com/massalabs/massa")
-    
+
     # load config files
     print("loading config file...")
     config_path = "massa/massa-node/base_config/config.toml"
@@ -27,45 +27,10 @@ def deploy(tag, servers):
     with open(peers_path) as json_file:
         peers = json.load(json_file)
 
-    # distribute to servers
-    testnet_pwd = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-    srvs = {
-        "testnet0": {
-            "ip": "141.94.218.103",
-            "node_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "node_pubkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "staking_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "bootstrap_server": False
-        },
-        "testnet1": {
-            "ip": "149.202.86.103",
-            "node_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "node_pubkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "staking_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "bootstrap_server": True
-        },
-        "testnet2": {
-            "ip": "149.202.89.125",
-            "node_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "node_pubkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "staking_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "bootstrap_server": True
-        },
-        "testnet3": {
-            "ip": "158.69.120.215",
-            "node_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "node_pubkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "staking_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "bootstrap_server": True
-        },
-        "testnet4": {
-            "ip": "158.69.23.120",
-            "node_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "node_pubkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "staking_privkey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-            "bootstrap_server": True
-        }
-    }
+    secrets = json.load(open('secrets.json'))
+    testnet_user = secrets['testnet_user']
+    testnet_pwd = secrets['testnet_pwd']
+    srvs = secrets['srvs']
 
     print("preparing launch script...")
     with open("massa/massa-node/launch.sh", "w") as outf:
@@ -75,45 +40,45 @@ def deploy(tag, servers):
         if srv_name not in servers:
             continue
         print("distributing to", srv_name, "...")
-        
+
         # setup node staking keys
         res_staking_keys = [srv["staking_privkey"],]
         with open(staking_keys_path, "w") as json_file:
             json_file.write(json.dumps(res_staking_keys, indent=2))
-        
+
         # setup peers
         res_peers = [p for p in peers if p["ip"] != srv["ip"]]
         with open(peers_path, "w") as json_file:
             json_file.write(json.dumps(res_peers, indent=2))
-        
+
         # setup node privkey
         with open(node_privkey_path, "w") as outf:
             outf.write(srv["node_privkey"])
-        
+
         # setup node wallet
         res_wallet = [srv["staking_privkey"]]
         with open(wallet_path, "w") as json_file:
             json_file.write(json.dumps(res_wallet, indent=2))
-        
+
         # setup config
         cfg = copy.deepcopy(config_data)
         cfg["version"] = tag
         cfg["network"]["target_bootstrap_connections"] = len(srvs) - 1  # connect to all bootstrap srvs
         cfg["network"]["target_out_nonbootstrap_connections"] = 3  # connect to 3 peers
-        cfg["network"]["max_in_nonbootstrap_connections"] = 10  # allow 10 people in        
+        cfg["network"]["max_in_nonbootstrap_connections"] = 10  # allow 10 people in
         cfg["network"]["routable_ip"] = srv["ip"]
         cfg["logging"]["level"] = 2
-        
+
         cfg["bootstrap"]["bootstrap_list"] = [
             [srv_v["ip"] + ":31245", srv_v["node_pubkey"]]
             for (srv_n, srv_v) in srvs.items() if srv_v["bootstrap_server"] is True and srv_n != srv_name
         ]
         if srv["bootstrap_server"] is False:
             del cfg["bootstrap"]["bind"]
-        
+
         with open(config_path, "w") as toml_file:
             toml.dump(cfg, toml_file)
-        
+
         # upload to server
         run_cmd("zip -r massa.zip massa")
         run_cmd('sshpass -p "' + testnet_pwd + '" ssh testnet@' + srv["ip"] + ' "pkill -f massa-node"', ignore_err=True)
@@ -128,4 +93,7 @@ def deploy(tag, servers):
 
 if __name__ == "__main__":
     deploy(sys.argv[1], sys.argv[2:])
+<<<<<<< HEAD
 
+=======
+>>>>>>> d2cbc8e (WIP)

@@ -20,7 +20,7 @@ def tag(tag, genesis_timestamp, end_timestamp):
     run_cmd("git clone https://github.com/massalabs/massa")
     os.chdir("massa")
     run_cmd("git checkout main")
-    
+
     # update config
     print("updating config...")
     config_path = "massa-node/base_config/config.toml"
@@ -30,13 +30,13 @@ def tag(tag, genesis_timestamp, end_timestamp):
     config_data["consensus"]["end_timestamp"] = end_timestamp
     with open(config_path, "w") as toml_file:
         toml.dump(config_data, toml_file)
-    
+
     # commit/push
     print("commit/push in main...")
     run_cmd('git commit -am "temporary versioning"')
     run_cmd("git push")
     commit_id = run_cmd("git rev-parse HEAD").strip()
-    
+
     # merge to testnet branch and tag
     print("merge into testnet...")
     run_cmd("git checkout testnet")
@@ -44,23 +44,20 @@ def tag(tag, genesis_timestamp, end_timestamp):
     run_cmd("git push")
     run_cmd('git tag "'+tag+'" -am "Version '+tag+'"')
     run_cmd("git push --tags")
-    
+
     # revert in main
     print("revert in main...")
     run_cmd("git checkout main");
     run_cmd("git revert --no-commit " + commit_id)
     run_cmd('git commit -am "undo temporary versioning"')
     run_cmd("git push")
-    
+
     # cleanup
     print("cleanup...")
     os.chdir("..")
     run_cmd("rm -rf massa")
-    
+
     print("done")
 
 if __name__ == "__main__":
     tag(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]))
-
-
-
