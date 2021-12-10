@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     testnet_user = os.environ['TESTNET_USER']
     testnet_pwd = os.environ['TESTNET_PWD']
-    # Example value for $TESTNET_PWD:
+    # Example value for $TESTNET_SRVS:
     # {
     #    "testnet0": {
     #        "ip": "141.94.218.103",
