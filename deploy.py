@@ -2,6 +2,7 @@ import copy
 import json
 import os
 import sys
+import time
 import toml
 
 ROOT_PATH = ".."  # this script is run inside a subfolder of massa git repository
@@ -112,5 +113,7 @@ if __name__ == "__main__":
         c = Connection(host=host, connect_kwargs={"password": testnet_pwd})
         c.run('pkill -f massa-node')
         c.run('source ~/.cargo/env && cd ~/massa/massa-node && nohup cargo run --release > logs.txt 2>&1 &')
+
+        time.sleep(300)
 
     print("done 🎉")
