@@ -105,6 +105,11 @@ if __name__ == "__main__":
         with open(CONFIG_PATH, "w") as toml_file:
             toml.dump(cfg, toml_file)
 
+        # release channels (based on build flavors)
+        cargo_options = "--release"
+        if "--beta" in sys.argv:
+            cargo_options += " --features beta"
+
         # upload to server
         host = f'{testnet_user}@{srv["ip"]}'
         os.system(f'rsync -azP --delete {ROOT_PATH} {host}:~')
@@ -112,7 +117,7 @@ if __name__ == "__main__":
         from fabric import Connection
         c = Connection(host=host, connect_kwargs={"password": testnet_pwd})
         c.run('pkill -f massa-node')
-        c.run('source ~/.cargo/env && cd ~/massa/massa-node && nohup cargo run --release > logs.txt 2>&1 &')
+        c.run(f'source ~/.cargo/env && cd ~/massa/massa-node && nohup cargo run {cargo_options} > logs.txt 2>&1 &')
 
         time.sleep(300)
 
